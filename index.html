@@ -138,7 +138,7 @@ function grid(){return LEVELS[lvl].map.map(r=>r.split(''));}
 function tileClass(ch){return {'.':'grass','c':'conc','a':'asph','w':'water','#':'rock','S':'grass','G':'shade'}[ch];}
 function tileFace(ch){return {'a':'♨️','w':'💧','#':'🪵','G':'🌳'}[ch]||'';}
 function render(hotCell){
- const g=grid();board.style.gridTemplateColumns=`repeat(${g[0].length},1fr)`;board.innerHTML='';
+ const g=grid();board.style.gridTemplateColumns=`repeat(${g[0].length},1fr)`;board.style.aspectRatio=g[0].length+'/'+g.length;board.innerHTML='';
  g.forEach((row,y)=>row.forEach((ch,x)=>{
   const d=document.createElement('div');d.className='tile '+tileClass(ch);
   if(hotCell&&hotCell.x===x&&hotCell.y===y)d.classList.add('hotstep');
