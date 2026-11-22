@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Shade Seeker — a paw-safe path puzzle</title>
+<meta name="description" content="Guide the pup across sun-baked tiles to the shade. Grass is cool, asphalt burns. A free puzzle from a real Phoenix dog walker.">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--ink:#2b2118;--paper:#fff7e8;--sun:#ffb340;--grass:#7bc96f;--grass2:#5db356;--conc:#d8cfc0;--asph:#5a5350;--asph2:#6e6560;--shade:#3e7d5b;--water:#5ec8e6;--accent:#e86a2c}
+body{font-family:Georgia,'Times New Roman',serif;background:linear-gradient(180deg,#ffd98a 0%,#ffb35c 34%,#f78d4b 100%);color:var(--ink);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:14px 12px 40px}
+.wrap{width:100%;max-width:520px}
+header{text-align:center;margin:6px 0 10px}
+h1{font-size:2.1rem;letter-spacing:.5px;color:#4a2400;text-shadow:0 2px 0 #ffe9bd}
+.tag{font-style:italic;color:#6b3a12;margin-top:2px;font-size:.98rem}
+.card{background:var(--paper);border:3px solid #4a2400;border-radius:16px;box-shadow:0 6px 0 rgba(74,36,0,.35);padding:14px;margin:10px 0}
+.hud{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:.95rem}
+.hud b{font-size:1.05rem}
+.hearts{font-size:1.15rem;letter-spacing:2px}
+#board{display:grid;gap:4px;margin:12px auto;width:100%;max-width:440px;aspect-ratio:1/1}
+.tile{border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:clamp(18px,6vw,30px);position:relative;border:2px solid rgba(0,0,0,.14);transition:transform .12s}
+.tile.grass{background:linear-gradient(145deg,var(--grass),var(--grass2))}
+.tile.conc{background:linear-gradient(145deg,#e6ddcd,var(--conc))}
+.tile.asph{background:linear-gradient(145deg,var(--asph2),var(--asph));color:#ffb3a0}
+.tile.shade{background:linear-gradient(145deg,#57a773,var(--shade));box-shadow:inset 0 0 0 3px #2c5c40}
+.tile.water{background:linear-gradient(145deg,#8fdcf5,var(--water))}
+.tile.rock{background:linear-gradient(145deg,#a89a86,#877a68)}
+.tile.hotstep{animation:sizzle .3s}
+@keyframes sizzle{0%{transform:scale(1)}40%{transform:scale(.88) rotate(-3deg)}100%{transform:scale(1)}}
+.pup{filter:drop-shadow(0 3px 2px rgba(0,0,0,.35));animation:bob 1.2s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.85rem;justify-content:center}
+.controls{display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:repeat(2,56px);justify-content:center;gap:6px;margin:12px 0 2px}
+.controls button{font-size:1.3rem;border:3px solid #4a2400;border-radius:12px;background:#fff;cursor:pointer;box-shadow:0 3px 0 rgba(74,36,0,.4)}
+.controls button:active{transform:translateY(2px);box-shadow:none}
+.btn{display:inline-block;border:3px solid #4a2400;border-radius:12px;background:var(--sun);color:#4a2400;font-family:inherit;font-weight:bold;font-size:1rem;padding:10px 18px;cursor:pointer;box-shadow:0 4px 0 rgba(74,36,0,.4);text-decoration:none}
+.btn:active{transform:translateY(2px);box-shadow:none}
+.btn.alt{background:#fff}
+#msg{min-height:1.5em;text-align:center;font-weight:bold;margin:8px 0 2px;font-size:1.02rem}
+.levels{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+.levels button{width:38px;height:38px;border-radius:50%;border:2px solid #4a2400;background:#fff;font-family:inherit;font-weight:bold;cursor:pointer}
+.levels button.done{background:var(--grass);color:#fff}
+.levels button.lock{background:#ddd;color:#999;cursor:default}
+.levels button.cur{background:var(--sun)}
+.tipcard{text-align:center;background:#fff3d6}
+.tipcard h2{font-size:1.25rem;margin-bottom:4px}
+.tipbtns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.tipbtns a{background:#fff;border:3px solid #4a2400;border-radius:999px;padding:8px 14px;color:#4a2400;font-weight:bold;text-decoration:none;box-shadow:0 3px 0 rgba(74,36,0,.4)}
+.tipbtns a:hover{animation:wiggle .4s}
+@keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-4deg) scale(1.06)}75%{transform:rotate(4deg) scale(1.06)}}
+.small{font-size:.85rem;color:#6b3a12}
+.door{text-align:center}
+.stars{font-size:1.6rem;text-align:center;letter-spacing:4px;min-height:1.4em}
+.hidden{display:none}
+footer{text-align:center;font-size:.8rem;color:#5c2d08;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>🌴 Shade Seeker</h1>
+<p class="tag">Get the pup to the shade. Grass is cool. Asphalt is lava — for real paws.</p>
+</header>
+
+<div class="card">
+<div class="hud">
+<span>Level <b id="lvlName">1 · Backyard Dash</b></span>
+<span class="hearts" id="hearts">❤️❤️❤️</span>
+<span>Steps <b id="steps">0</b></span>
+</div>
+<div id="board" role="grid" aria-label="Puzzle board"></div>
+<div id="msg">Use the arrows, WASD, or swipe. Reach the shady tree!</div>
+<div class="stars" id="stars"></div>
+<div class="controls">
+<span></span><button id="up" aria-label="Up">▲</button><span></span>
+<button id="left" aria-label="Left">◀</button><button id="down" aria-label="Down">▼</button><button id="right" aria-label="Right">▶</button>
+</div>
+<div style="text-align:center;margin-top:10px">
+<button class="btn alt" id="restart">↺ Restart level</button>
+<button class="btn hidden" id="next">Next level →</button>
+</div>
+<div class="levels" id="levels"></div>
+</div>
+
+<div class="card">
+<div class="legend">
+<span>🌿 Grass — cool, safe</span><span>🪨 Concrete — warm, safe</span>
+<span>♨️ Asphalt — costs a heart</span><span>💧 Water — +1 heart</span>
+<span>🪵 Log — blocked</span><span>🌳 Shade — the goal</span>
+</div>
+<p class="small" style="margin-top:10px">Real talk from a Phoenix dog walker: on a 110°F day, asphalt can hit 170°F and burn paw pads in under a minute. That's why the fast route across the black tiles is never worth it — plan the cool path, hit the water, rest in the shade. Every level here is that real decision, turned into a puzzle.</p>
+</div>
+
+<div class="card tipcard" id="tipHome">
+<h2>🍌 Feed KONG a banana</h2>
+<p>Built by Queston + KONG and kept free on purpose — feed KONG a banana if it made your day.</p>
+<div class="tipbtns">
+<a href="https://paypal.me/queston/3" target="_blank" rel="noopener">🍌 Banana $3</a>
+<a href="https://paypal.me/queston/5" target="_blank" rel="noopener">🍌🍌 Banana Bunch $5</a>
+<a href="https://paypal.me/queston/10" target="_blank" rel="noopener">🍌 Feast $10</a>
+</div>
+</div>
+
+<div class="card door">
+<p><b>Walking a real dog in real heat?</b><br>Check the pavement first with our free <a href="https://questonryan-coder.github.io/paw-heat-check/">Paw Heat Check</a>, and meet Queston's pet-care crew at <a href="https://walknsit.com">walknsit.com</a>.</p>
+</div>
+
+<div class="card tipcard hidden" id="tipWin">
+<h2>🏆 You shaded every pup!</h2>
+<p id="winStats"></p>
+<p style="margin-top:6px">Built by Queston + KONG and kept free on purpose — feed KONG a banana if it made your day.</p>
+<div class="tipbtns">
+<a href="https://paypal.me/queston/3" target="_blank" rel="noopener">🍌 Banana $3</a>
+<a href="https://paypal.me/queston/5" target="_blank" rel="noopener">🍌🍌 Banana Bunch $5</a>
+<a href="https://paypal.me/queston/10" target="_blank" rel="noopener">🍌 Feast $10</a>
+</div>
+<button class="btn" id="again">Play again</button>
+</div>
+
+<footer>Shade Seeker · free forever · no signup · a Banana Arcade cabinet</footer>
+</div>
+
+<script>
+// Tiles: . grass, c concrete, a asphalt, w water, # log(blocked), S start(grass), G goal shade
+const LEVELS=[
+{name:"Backyard Dash",par:8,map:["S....a",".aa...","...a.G","......"]},
+{name:"Driveway Dodge",par:9,map:["S..a..","##.a.w","...a..",".aaa#.",".....G"]},
+{name:"Mailbox Run",par:11,map:["S.a...","..a.#.","w.a...","..aaa.","....aG","......"]},
+{name:"The Hot Block",par:13,map:["S..aa.",".#....","..aa.w","......",".aa.##","....aG"]},
+{name:"Sprinkler Alley",par:12,map:["S.a...","..a#a.","w.....",".###a.","...w.a",".aa..G"]},
+{name:"Phoenix Noon",par:16,map:["S..a...","##.a.#.","...a...",".aaa.w.",".......",".a.###.",".a....G"]}
+];
+let lvl=0,pos={x:0,y:0},hearts=3,steps=0,won=false,totalStars=0;
+let unlocked=parseInt(localStorage.getItem('shade_unlocked')||'1');
+const board=document.getElementById('board'),msg=document.getElementById('msg');
+let AC; function beep(f,d){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f;o.connect(g);g.connect(AC.destination);g.gain.setValueAtTime(.12,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+d);o.start();o.stop(AC.currentTime+d);}catch(e){}}
+function grid(){return LEVELS[lvl].map.map(r=>r.split(''));}
+function tileClass(ch){return {'.':'grass','c':'conc','a':'asph','w':'water','#':'rock','S':'grass','G':'shade'}[ch];}
+function tileFace(ch){return {'a':'♨️','w':'💧','#':'🪵','G':'🌳'}[ch]||'';}
+function render(hotCell){
+ const g=grid();board.style.gridTemplateColumns=`repeat(${g[0].length},1fr)`;board.innerHTML='';
+ g.forEach((row,y)=>row.forEach((ch,x)=>{
+  const d=document.createElement('div');d.className='tile '+tileClass(ch);
+  if(hotCell&&hotCell.x===x&&hotCell.y===y)d.classList.add('hotstep');
+  d.textContent=(pos.x===x&&pos.y===y)?'':tileFace(ch);
+  if(pos.x===x&&pos.y===y){const s=document.createElement('span');s.className='pup';s.textContent='🐶';d.appendChild(s);}
+  board.appendChild(d);
+ }));
+ document.getElementById('hearts').textContent='❤️'.repeat(Math.max(hearts,0))+'🖤'.repeat(Math.max(3-hearts,0));
+ document.getElementById('steps').textContent=steps;
+ document.getElementById('lvlName').textContent=(lvl+1)+' · '+LEVELS[lvl].name;
+ const lv=document.getElementById('levels');lv.innerHTML='';
+ LEVELS.forEach((L,i)=>{const b=document.createElement('button');b.textContent=i+1;
+  if(i<unlocked-0&&i<lvl||localStorage.getItem('shade_done_'+i))b.className='done';
+  if(i>=unlocked){b.className='lock';b.disabled=true;}
+  if(i===lvl)b.className='cur';
+  b.onclick=()=>{if(i<unlocked)load(i);};lv.appendChild(b);});
+}
+function load(i){lvl=i;const g=grid();outer:for(let y=0;y<g.length;y++)for(let x=0;x<g[0].length;x++)if(g[y][x]==='S'){pos={x,y};break outer;}
+ hearts=3;steps=0;won=false;document.getElementById('stars').textContent='';document.getElementById('next').classList.add('hidden');
+ msg.textContent='Level '+(i+1)+': '+LEVELS[i].name+'. Reach the shady tree!';render();}
+function move(dx,dy){
+ if(won)return;const g=grid();const nx=pos.x+dx,ny=pos.y+dy;
+ if(nx<0||ny<0||ny>=g.length||nx>=g[0].length)return;
+ const ch=g[ny][nx];if(ch==='#'){beep(140,.08);return;}
+ pos={x:nx,y:ny};steps++;let hot=null;
+ if(ch==='a'){hearts--;hot={x:nx,y:ny};beep(180,.18);msg.textContent=hearts>0?'Ouch — hot paws! '+hearts+(hearts===1?' heart':' hearts')+' left.':'Oh no, those paws are cooked! Tap Restart and take the cool route.';}
+ else if(ch==='w'){if(hearts<3){hearts++;msg.textContent='Splash! Cool water, +1 heart. 💧';}else msg.textContent='Nice cool splash. 💧';beep(660,.12);}
+ else{beep(440,.05);msg.textContent='';}
+ if(ch==='G'&&hearts>0){won=true;const par=LEVELS[lvl].par;const st=steps<=par?3:(steps<=par+4?2:1);totalStars+=st;
+  document.getElementById('stars').textContent='⭐'.repeat(st)+'☆'.repeat(3-st);
+  msg.textContent='Shade at last! '+steps+' steps (par '+par+'). The pup approves. 🐾';beep(880,.25);
+  localStorage.setItem('shade_done_'+lvl,'1');if(lvl+2>unlocked){unlocked=Math.min(lvl+2,LEVELS.length);localStorage.setItem('shade_unlocked',unlocked);}
+  if(lvl<LEVELS.length-1)document.getElementById('next').classList.remove('hidden');
+  else{document.getElementById('tipWin').classList.remove('hidden');document.getElementById('winStats').textContent='All '+LEVELS.length+' levels shaded. Final level: '+steps+' steps, '+hearts+' hearts left.';document.getElementById('tipWin').scrollIntoView({behavior:'smooth'});}
+ }
+ if(hearts<=0){beep(120,.4);}
+ render(hot);
+}
+document.getElementById('up').onclick=()=>move(0,-1);document.getElementById('down').onclick=()=>move(0,1);
+document.getElementById('left').onclick=()=>move(-1,0);document.getElementById('right').onclick=()=>move(1,0);
+document.getElementById('restart').onclick=()=>load(lvl);
+document.getElementById('next').onclick=()=>load(lvl+1);
+document.getElementById('again').onclick=()=>{document.getElementById('tipWin').classList.add('hidden');load(0);};
+document.addEventListener('keydown',e=>{const k=e.key.toLowerCase();
+ if(k==='arrowup'||k==='w')move(0,-1);else if(k==='arrowdown'||k==='s')move(0,1);
+ else if(k==='arrowleft'||k==='a')move(-1,0);else if(k==='arrowright'||k==='d')move(1,0);});
+let ts=null;board.addEventListener('touchstart',e=>{ts=e.touches[0];},{passive:true});
+board.addEventListener('touchend',e=>{if(!ts)return;const t=e.changedTouches[0];const dx=t.clientX-ts.clientX,dy=t.clientY-ts.clientY;
+ if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>24)move(Math.sign(dx),0);else if(Math.abs(dy)>24)move(0,Math.sign(dy));ts=null;},{passive:true});
+load(0);
+</script>
+</body>
+</html>
